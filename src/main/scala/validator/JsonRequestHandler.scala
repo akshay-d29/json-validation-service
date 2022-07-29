@@ -7,21 +7,21 @@ import io.circe.schema.Schema
 import validator.Domain._
 
 import java.io.{BufferedReader, FileReader}
-import java.nio.file.{Files, Path, Paths, StandardCopyOption, StandardOpenOption}
+import java.nio.file._
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 class JsonRequestHandler(schemaStorageDir: Path) {
   private val schemaDownloadPath: Path = Paths.get("downloads/")
-  private val extension: String = ".json"
+  private val extension: String        = ".json"
 
   def uploadSchema(json: Json, id: String, schemaDir: Path = schemaStorageDir): IO[ValidationResponse] = {
     val schemaPath = schemaDir.resolve(s"$id$extension")
 
-    if(Files.exists(schemaPath))
+    if (Files.exists(schemaPath))
       IO.pure(ValidationResponse(UploadSchema, id, Error("File already exists!")))
     else {
       IO(Files.write(schemaPath, json.spaces2.getBytes, StandardOpenOption.CREATE)).attempt.map {
-        case Left(_) => ValidationResponse(UploadSchema, id, Error())
+        case Left(e)  => ValidationResponse(UploadSchema, id, Error(e.getMessage))
         case Right(_) => ValidationResponse(UploadSchema, id, Success)
       }
     }
@@ -35,7 +35,8 @@ class JsonRequestHandler(schemaStorageDir: Path) {
           schemaStorageDir.resolve(s"$id$extension"),
           downloadPath.resolve(s"$id$extension"),
           StandardCopyOption.REPLACE_EXISTING
-        )) *> IO(ValidationResponse(GetSchema, id, Success))
+        )
+      ) *> IO(ValidationResponse(GetSchema, id, Success))
     else IO.pure(ValidationResponse(GetSchema, id, Error("File Not Found. Please check schema id.")))
   }
 
@@ -44,7 +45,7 @@ class JsonRequestHandler(schemaStorageDir: Path) {
       schemaStr <- readSchemaJson(id)
       schema    <- IO.fromTry[Schema](Schema.loadFromString(schemaStr))
       filteredJson = json.deepDropNullValues
-      result = schema.validate(filteredJson)
+      result       = schema.validate(filteredJson)
     } yield {
       result match {
         case Validated.Valid(_)   => ValidationResponse(ValidateDocument, id, Success)
@@ -56,7 +57,7 @@ class JsonRequestHandler(schemaStorageDir: Path) {
   private def readSchemaJson(id: String): IO[String] = {
     val filePath = schemaStorageDir.resolve(s"$id$extension")
     if (Files.exists(filePath)) {
-      val bufferedResource = Resource.make{
+      val bufferedResource = Resource.make {
         IO(new BufferedReader(new FileReader(schemaStorageDir.resolve(s"$id$extension").toFile)))
       }(reader => IO(reader.close()))
 

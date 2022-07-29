@@ -10,8 +10,8 @@ object Domain {
   case object GetSchema        extends DomainAction
 
   sealed trait Outcome
-  case object Success                                extends Outcome
-  case class Error(message: String = "Invalid Json") extends Outcome
+  case object Success               extends Outcome
+  case class Error(message: String) extends Outcome
 
   case class ValidationResponse(action: DomainAction, id: String, status: Outcome) {
     private val defaultResponse: JsonObject = JsonObject(
