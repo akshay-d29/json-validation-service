@@ -2,18 +2,15 @@ import sbt._
 
 object Dependencies {
 
-//  object Json {
-//    val json = "com.github.java-json-tools" % "json-schema-validator" % "2.2.14"
-//  }
-
   object Logging {
     val logger ="ch.qos.logback" % "logback-classic" % "1.1.3" % Runtime
   }
 
   object Circe {
-    private val circeVersion = "0.14.1"
-
     val schema = "io.circe" %% "circe-json-schema" % "0.1.0"
+
+    private val circeVersion = "0.14.1"
+    
     def all: Seq[ModuleID] = Seq(
       "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",
