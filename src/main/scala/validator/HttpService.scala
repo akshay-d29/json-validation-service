@@ -6,6 +6,7 @@ import org.http4s.{HttpApp, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
 import scala.language.postfixOps
+import io.circe.syntax.EncoderOps
 
 class HttpService(jsonRequestHandler: JsonRequestHandler) {
 
@@ -22,17 +23,17 @@ class HttpService(jsonRequestHandler: JsonRequestHandler) {
           val result = (for {
             requestJson <- request.as[Json]
             res         <- jsonRequestHandler.uploadSchema(requestJson, id)
-          } yield res).handleError(errorHandler)
+          } yield res.asJson).handleError(errorHandler)
 
           Ok(result)
 
-        case GET -> Root / `schema` / id => jsonRequestHandler.getSchema(id).flatMap(Ok(_))
+        case GET -> Root / `schema` / id => jsonRequestHandler.getSchema(id).flatMap(res => Ok(res.asJson))
 
         case request @ POST -> Root / "validate" / id =>
           val result = (for {
             requestJson <- request.as[Json]
             res         <- jsonRequestHandler.validate(requestJson, id)
-          } yield res).handleError(errorHandler)
+          } yield res.asJson).handleError(errorHandler)
 
           Ok(result)
 
