@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import io.circe.Json
 import io.circe.parser._
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import utils.Utils._
@@ -11,7 +12,12 @@ import validator.Domain.{Error, GetSchema, Success, UploadSchema, ValidateDocume
 
 import java.nio.file.{Files, Path, Paths}
 
-class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers {
+class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers with BeforeAndAfterAll {
+
+  override def afterAll(): Unit = {
+    deleteFiles(schemaStorageDir)
+    ()
+  }
 
   private val schemaStorageDir: Path  = Paths.get("src/test/resources/")
   private val jsonRequestHandler      = new JsonRequestHandler(schemaStorageDir)
@@ -54,7 +60,6 @@ class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers {
         |""".stripMargin
 
     "return success on uploading valid schema" in {
-      IO(Files.deleteIfExists(schemaStorageDir.resolve(s"$schemaId.json"))).unsafeRunSync()
       val schemaJson: Json = parse(validSchema).getUnsafe
       val result           = jsonRequestHandler.uploadSchema(schemaJson, schemaId, schemaStorageDir)
       val expected         = ValidationResponse(UploadSchema, schemaId, Success)
