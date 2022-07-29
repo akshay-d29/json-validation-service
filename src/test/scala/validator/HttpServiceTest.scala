@@ -5,7 +5,7 @@ import cats.effect.unsafe.implicits.global
 import io.circe.Json
 import io.circe.parser._
 import org.http4s.Method.{GET, POST}
-import org.http4s.Status.Ok
+import org.http4s.Status.{BadRequest, Created, Ok}
 import org.http4s.Uri.fromString
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
 import org.http4s.{EntityDecoder, Request, Response, Status}
@@ -66,7 +66,7 @@ class HttpServiceTest extends AnyWordSpecLike with Matchers with BeforeAndAfterA
       val response = new HttpService(jsonRequestHandler).routes
         .run(Request(method = POST, uri = fromString(s"/schema/$schemaId").getUnsafe).withEntity(parse(validSchema).getUnsafe))
 
-      assertResponse[Json](response, Ok, Some(expected))
+      assertResponse[Json](response, Created, Some(expected))
     }
 
     "return success response on get schema with a valid schema-id" in {
@@ -85,7 +85,7 @@ class HttpServiceTest extends AnyWordSpecLike with Matchers with BeforeAndAfterA
       val response = new HttpService(jsonRequestHandler).routes
         .run(Request(method = GET, uri = fromString(s"/schema/$invalidId").toOption.get))
 
-      assertResponse[Json](response, Ok, Some(expected))
+      assertResponse[Json](response, BadRequest, Some(expected))
     }
 
     "return success response on validating a json against a valid schema" in {
