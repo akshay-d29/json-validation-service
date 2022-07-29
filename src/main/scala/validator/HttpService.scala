@@ -14,10 +14,11 @@ class HttpService(jsonRequestHandler: JsonRequestHandler) {
   def routes: HttpApp[IO] = {
     val dsl = Http4sDsl[IO]
     import dsl._
+    val schema: String = "schema"
 
     HttpRoutes
       .of[IO] {
-        case request @ POST -> Root / "schema" / id =>
+        case request @ POST -> Root / `schema` / id =>
           val result = (for {
             requestJson <- request.as[Json]
             res         <- jsonRequestHandler.uploadSchema(requestJson, id)
@@ -25,7 +26,7 @@ class HttpService(jsonRequestHandler: JsonRequestHandler) {
 
           Ok(result)
 
-        case GET -> Root / "schema" / id => jsonRequestHandler.getSchema(id).flatMap(Ok(_))
+        case GET -> Root / `schema` / id => jsonRequestHandler.getSchema(id).flatMap(Ok(_))
 
         case request @ POST -> Root / "validate" / id =>
           val result = (for {
