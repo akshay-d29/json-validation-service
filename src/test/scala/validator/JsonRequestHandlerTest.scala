@@ -6,13 +6,15 @@ import io.circe.Json
 import io.circe.parser._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import utils.Utils._
 import validator.Domain.{Error, GetSchema, Success, UploadSchema, ValidateDocument, ValidationResponse}
+
 import java.nio.file.{Files, Path, Paths}
 
 class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers {
 
-  private val jsonRequestHandler = new JsonRequestHandler()
-  private val schemaStorageDir: Path = Paths.get("src/test/resources/")
+  private val schemaStorageDir: Path  = Paths.get("src/test/resources/")
+  private val jsonRequestHandler      = new JsonRequestHandler(schemaStorageDir)
   private val schemaDownloadDir: Path = Paths.get("src/test/downloads/")
 
   "JsonRequestHandler" should {
@@ -53,17 +55,17 @@ class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers {
 
     "return success on uploading valid schema" in {
       IO(Files.deleteIfExists(schemaStorageDir.resolve(s"$schemaId.json"))).unsafeRunSync()
-      val schemaJson: Json = parse(validSchema).getOrElse(Json.Null)
-      val result = jsonRequestHandler.uploadSchema(schemaJson, schemaId, schemaStorageDir)
-      val expected = ValidationResponse(UploadSchema, schemaId, Success)
+      val schemaJson: Json = parse(validSchema).getUnsafe
+      val result           = jsonRequestHandler.uploadSchema(schemaJson, schemaId, schemaStorageDir)
+      val expected         = ValidationResponse(UploadSchema, schemaId, Success)
 
       result.unsafeRunSync() shouldBe expected
     }
 
     "return error with message on uploading already uploaded schema" in {
-      val schemaJson: Json = parse(validSchema).getOrElse(Json.Null)
-      val result = jsonRequestHandler.uploadSchema(schemaJson, schemaId, schemaStorageDir)
-      val expected = ValidationResponse(UploadSchema, schemaId, Error("File already exists!"))
+      val schemaJson: Json = parse(validSchema).getUnsafe
+      val result           = jsonRequestHandler.uploadSchema(schemaJson, schemaId, schemaStorageDir)
+      val expected         = ValidationResponse(UploadSchema, schemaId, Error("File already exists!"))
 
       result.unsafeRunSync() shouldBe expected
     }
@@ -80,8 +82,8 @@ class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers {
           |    "number": null
           |  }
           |}""".stripMargin
-      val json = parse(jsonStr).getOrElse(Json.Null)
-      val result = jsonRequestHandler.validate(json, schemaId)
+      val json     = parse(jsonStr).getUnsafe
+      val result   = jsonRequestHandler.validate(json, schemaId)
       val expected = ValidationResponse(ValidateDocument, schemaId, Success)
 
       result.unsafeRunSync() shouldBe expected
@@ -98,21 +100,21 @@ class JsonRequestHandlerTest extends AnyWordSpecLike with Matchers {
           |    "number": null
           |  }
           |}""".stripMargin
-      val json = parse(jsonStr).getOrElse(Json.Null)
-      val result = jsonRequestHandler.validate(json, schemaId)
+      val json     = parse(jsonStr).getUnsafe
+      val result   = jsonRequestHandler.validate(json, schemaId)
       val expected = ValidationResponse(ValidateDocument, schemaId, Error("#: required key [destination] not found"))
 
       result.unsafeRunSync() shouldBe expected
     }
 
     "return success on calling get schema with valid schema-id and download file" in {
-      val result = jsonRequestHandler.getSchema(schemaId, schemaDownloadDir)
+      val result   = jsonRequestHandler.getSchema(schemaId, schemaDownloadDir)
       val expected = ValidationResponse(GetSchema, schemaId, Success)
       result.unsafeRunSync() shouldBe expected
     }
 
     "return error on calling get schema with invalid schema-id" in {
-      val result = jsonRequestHandler.getSchema("invalid-schema", schemaDownloadDir)
+      val result   = jsonRequestHandler.getSchema("invalid-schema", schemaDownloadDir)
       val expected = ValidationResponse(GetSchema, "invalid-schema", Error("File Not Found. Please check schema id."))
       result.unsafeRunSync() shouldBe expected
     }

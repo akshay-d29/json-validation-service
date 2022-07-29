@@ -10,8 +10,7 @@ import java.io.{BufferedReader, FileReader}
 import java.nio.file.{Files, Path, Paths, StandardCopyOption, StandardOpenOption}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-class JsonRequestHandler() {
-  private val schemaStorageDir: Path = Paths.get("src/main/resources/")
+class JsonRequestHandler(schemaStorageDir: Path) {
   private val schemaDownloadPath: Path = Paths.get("downloads/")
   private val extension: String = ".json"
 
